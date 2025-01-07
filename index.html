@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Agency Order Form</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 5px;
+    }
+    th {
+      text-align: left;
+    }
+    input[type="text"], input[type="number"], textarea {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+    .flatpickr-input {
+      width: 100%;
+    }
+    .readonly-field {
+      background-color: #f0f0f0;
+      border: none;
+      padding: 5px;
+    }
+    #addRow {
+      margin: 10px 0;
+      padding: 5px 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .select2-container {
+      width: 100% !important;
+      margin-bottom: 10px;
+    }
+    .agency-field {
+      margin-bottom: 15px;
+    }
+    form {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .form-row {
+      margin-bottom: 15px;
+    }
+    .radio-group {
+      margin: 10px 0;
+    }
+    .radio-group label {
+      margin-right: 15px;
+    }
+    textarea {
+      resize: vertical;
+    }
+    @media print {
+      .no-print {
+        display: none;
+      }
+      .form-container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Agency Order Form</h2>
+  <form id="agencyOrderForm" onsubmit="handleSubmit(event)">
+    <div class="form-row">
+      <label for="agency">AGENCY:</label><br>
+      <select id="agency" class="agency-select">
+        <option value="">Search for an agency...</option>
+      </select>
+    </div>
+    
+    <div class="form-row">
+      <label for="address">ADDRESS:</label><br>
+      <textarea id="address" name="address" rows="3" cols="30" readonly></textarea>
+    </div>
+    
+    <div class="form-row">
+      <label for="contact">CONTACT:</label><br>
+      <input type="text" id="contact" name="contact" readonly>
+    </div>
+    
+    <div class="form-row">
+      <label for="telephone">TELEPHONE:</label><br>
+      <input type="tel" id="telephone" name="telephone" readonly>
+    </div>
+    
+    <div class="form-row radio-group">
+      <label>ORDER:</label><br>
+      <input type="radio" id="new" name="order" value="NEW">
+      <label for="new">NEW</label>
+      <input type="radio" id="stop" name="order" value="STOP">
+      <label for="stop">STOP</label>
+      <input type="radio" id="change" name="order" value="CHANGE">
+      <label for="change">CHANGE</label>
+    </div>
+    
+    <div class="form-row">
+      <label for="product">PRODUCT:</label><br>
+      <input type="text" id="product" name="product">
+    </div>
+    
+    <div class="form-row">
+      <label for="coop">CO-OP:</label><br>
+      <input type="text" id="coop" name="coop">
+    </div>
+    
+    <div class="form-row">
+      <label for="cart">CART NUMBER:</label><br>
+      <input type="text" id="cart" name="cart">
+    </div>
+    
+    <div class="form-row">
+      <label for="duration">DURATION:</label><br>
+      <input type="text" id="duration" name="duration">
+    </div>
+    
+    <div class="form-row">
+      <label for="discount">DISCOUNT:</label><br>
+      <input type="text" id="discount" name="discount">
+    </div>
+    
+    <div class="form-row">
+      <label for="sponsor">SPONSOR RESTRICTION:</label><br>
+      <input type="text" id="sponsor" name="sponsor">
+    </div>
+    
+    <div class="form-row">
+      <label for="billing">BILLING CYCLE:</label><br>
+      <input type="text" id="billing" name="billing">
+    </div>
+    
+    <div class="form-row">
+      <label for="package">PACKAGE SOLD:</label><br>
+      <input type="text" id="package" name="package">
+    </div>
+    
+    <h3>DAYPARTS</h3>
+    <table id="daypartsTable">
+      <tr>
+        <th>Dates</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>M</th>
+        <th>Tu</th>
+        <th>W</th>
+        <th>Th</th>
+        <th>F</th>
+        <th>Sat</th>
+        <th>Sun</th>
+        <th>Rate</th>
+        <th>Week</th>
+      </tr>
+      <tr>
+        <td><input type="text" name="dates[]" class="datepicker"></td>
+        <td><input type="text" name="startTime[]"></td>
+        <td><input type="text" name="endTime[]"></td>
+        <td><input type="number" name="m[]" min="0"></td>
+        <td><input type="number" name="tu[]" min="0"></td>
+        <td><input type="number" name="w[]" min="0"></td>
+        <td><input type="number" name="th[]" min="0"></td>
+        <td><input type="number" name="f[]" min="0"></td>
+        <td><input type="number" name="sat[]" min="0"></td>
+        <td><input type="number" name="sun[]" min="0"></td>
+        <td><input type="number" name="rate[]" min="0" step="0.01"></td>
+        <td><span class="readonly-field"></span></td>
+      </tr>
+    </table>
+    <button type="button" id="addRow">+</button>
+    
+    <p>
+      <strong>Order Totals:</strong><br>
+      <strong>Gross:</strong> <span id="gross" class="readonly-field"></span><br>
+      <strong>Net:</strong> <span id="net" class="readonly-field"></span>
+    </p>
+    
+    <div class="form-actions">
+      <input type="submit" value="Submit" class="submit-button">
+      <div id="submitStatus" style="display: none;"></div>
+    </div>
+  </form>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+  
+  <script>
+    // Monday.com API configuration
+    const MONDAY_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQyNzI0MzYwNiwiYWFpIjoxMSwidWlkIjo2NjEwNzEzOSwiaWFkIjoiMjAyNC0xMC0yM1QxNDoxMjo0Ny4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjEzNjMwNDksInJnbiI6InVzZTEifQ._4O4wAXUwTgo4z2MsGc0F75bFLLiEHiDXjDUwiByycM';
+    const MONDAY_API_URL = 'https://api.monday.com/v2';
+    const BOARD_ID = '6085343068';
+
+    // Initialize Select2 for agency dropdown
+    $('.agency-select').select2({
+      placeholder: 'Search for an agency...',
+      minimumInputLength: 2,
+      ajax: {
+        url: MONDAY_API_URL,
+        headers: {
+          'Authorization': MONDAY_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        data: function(params) {
+          const query = `
+            query {
+              boards(ids: ${BOARD_ID}) {
+                items_page(search_term: "${params.term}", limit: 10) {
+                  items {
+                    id
+                    name
+                    column_values {
+                      title
+                      text
+                    }
+                  }
+                }
+              }
+            }
+          `;
+          
+          return {
+            query: query
+          };
+        },
+        processResults: function(data) {
+          return {
+            results: data.data.boards[0].items_page.items.map(item => ({
+              id: item.id,
+              text: item.name,
+              address: item.column_values.find(col => col.title === 'Address')?.text || '',
+              contact: item.column_values.find(col => col.title === 'Contact')?.text || '',
+              telephone: item.column_values.find(col => col.title === 'Phone')?.text || ''
+            }))
+          };
+        }
+      }
+    }).on('select2:select', function(e) {
+      const data = e.params.data;
+      document.getElementById('address').value = data.address;
+      document.getElementById('contact').value = data.contact;
+      document.getElementById('telephone').value = data.telephone;
+    });
+
+    // Initialize flatpickr for initial row
+    function initializeDatepicker(element) {
+      flatpickr(element, {
+        mode: "range",
+        dateFormat: "m/d/y",
+        allowInput: true,
+        onChange: calculateTotalPrice
+      });
+    }
+
+    // Initialize existing datepickers
+    document.querySelectorAll('.datepicker').forEach(initializeDatepicker);
+
+    function calculateWeeklyPrice(row) {
+      const dateRangeInput = row.querySelector('.datepicker');
+      const dateRange = dateRangeInput ? dateRangeInput.value : '';
+      const [startDate, endDate] = dateRange.split(' to ');
+      
+      const rateInput = row.querySelector('input[name="rate[]"]');
+      const rate = rateInput ? parseFloat(rateInput.value) || 0 : 0;
+      
+      // Get all day values
+      const days = ['m', 'tu', 'w', 'th', 'f', 'sat', 'sun'];
+      let totalSpots = 0;
+      
+      days.forEach(day => {
+        const dayInput = row.querySelector(`input[name="${day}[]"]`);
+        const dayValue = dayInput ? parseFloat(dayInput.value) || 0 : 0;
+        totalSpots += dayValue;
+      });
+      
+      // Calculate weeks in the date range
+      let weeks = 0;
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        weeks = Math.ceil(daysDiff / 7);
+      }
+      
+      // Calculate total weekly price
+      const weeklyPrice = totalSpots * rate * weeks;
+      
+      const weekField = row.querySelector('.readonly-field');
+      if (weekField) {
+        weekField.textContent = '$' + weeklyPrice.toFixed(2);
+      }
+      
+      return weeklyPrice;
+    }
+
+    function calculateTotalPrice() {
+      const rows = document.querySelectorAll('#daypartsTable tr:not(:first-child)');
+      let totalGross = 0;
+      let totalNet = 0;
+
+      rows.forEach(row => {
+        const weeklyPrice = calculateWeeklyPrice(row);
+        totalGross += weeklyPrice;
+        totalNet += weeklyPrice;
+      });
+
+      const grossField = document.getElementById('gross');
+      const netField = document.getElementById('net');
+      if (grossField && netField) {
+        grossField.textContent = '$' + totalGross.toFixed(2);
+        netField.textContent = '$' + totalNet.toFixed(2);
+      }
+    }
+
+    // Function to create and add new row
+    function addNewRow() {
+      const table = document.getElementById('daypartsTable');
+      const newRow = table.insertRow(-1);
+      
+      const template = `
+        <td><input type="text" name="dates[]" class="datepicker"></td>
+        <td><input type="text" name="startTime[]"></td>
+        <td><input type="text" name="endTime[]"></td>
+        <td><input type="number" name="m[]" min="0"></td>
+        <td><input type="number" name="tu[]" min="0"></td>
+        <td><input type="number" name="w[]" min="0"></td>
+        <td><input type="number" name="th[]" min="0"></td>
+        <td><input type="number" name="f[]" min="0"></td>
+        <td><input type="number" name="sat[]" min="0"></td>
+        <td><input type="number" name="sun[]" min="0"></td>
+        <td><input type="number" name="rate[]" min="0" step="0.01"></td>
+        <td><span class="readonly-field"></span></td>
+      `;
+      
+      newRow.innerHTML = template;
+      
+      // Initialize datepicker for new row
+      initializeDatepicker(newRow.querySelector('.datepicker'));
+      
+      calculateTotalPrice();
+    }
+
+    // Add event listeners
+    const tableBody = document.querySelector('#daypartsTable');
+    tableBody.addEventListener('input', function(event) {
+      if (event.target.matches('input[name="rate[]"], input[name^="m"], input[name^="tu"], input[name^="w"], input[name^="th"], input[name^="f"], input[name^="sat"], input[name^="sun"]')) {
+        calculateTotalPrice();
+      }
+    });
+
+    // Add Row button event listener
+    document.getElementById('addRow').addEventListener('click', addNewRow);
+
+    // Form submission handler
+    async function handleSubmit(event) {
+      event.preventDefault();
+      
+      const submitButton = document.querySelector('.submit-button');
+      const statusDiv = document.getElementById('submitStatus');
+      submitButton.disabled = true;
+      statusDiv.style.display = 'block';
+      statusDiv.textContent = 'Submitting
