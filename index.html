@@ -16,7 +16,6 @@
     input[type="text"], input[type="number"], textarea {
       width: 100%;
       box-sizing: border-box;
-      margin-bottom: 10px;
     }
     .flatpickr-input {
       width: 100%;
@@ -36,9 +35,6 @@
       width: 100% !important;
       margin-bottom: 10px;
     }
-    .agency-field {
-      margin-bottom: 15px;
-    }
     form {
       max-width: 1200px;
       margin: 0 auto;
@@ -53,16 +49,18 @@
     .radio-group label {
       margin-right: 15px;
     }
-    textarea {
-      resize: vertical;
+    #submitStatus {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
     }
-    @media print {
-      .no-print {
-        display: none;
-      }
-      .form-container {
-        padding: 20px;
-      }
+    .error {
+      background-color: #ffe6e6;
+      color: #cc0000;
+    }
+    .success {
+      background-color: #e6ffe6;
+      color: #006600;
     }
   </style>
 </head>
@@ -93,7 +91,7 @@
     
     <div class="form-row radio-group">
       <label>ORDER:</label><br>
-      <input type="radio" id="new" name="order" value="NEW">
+      <input type="radio" id="new" name="order" value="NEW" required>
       <label for="new">NEW</label>
       <input type="radio" id="stop" name="order" value="STOP">
       <label for="stop">STOP</label>
@@ -103,7 +101,7 @@
     
     <div class="form-row">
       <label for="product">PRODUCT:</label><br>
-      <input type="text" id="product" name="product">
+      <input type="text" id="product" name="product" required>
     </div>
     
     <div class="form-row">
@@ -179,7 +177,7 @@
       <strong>Gross:</strong> <span id="gross" class="readonly-field"></span><br>
       <strong>Net:</strong> <span id="net" class="readonly-field"></span>
     </p>
-    
+
     <div class="form-actions">
       <input type="submit" value="Submit" class="submit-button">
       <div id="submitStatus" style="display: none;"></div>
@@ -362,7 +360,4 @@
       event.preventDefault();
       
       const submitButton = document.querySelector('.submit-button');
-      const statusDiv = document.getElementById('submitStatus');
-      submitButton.disabled = true;
-      statusDiv.style.display = 'block';
-      statusDiv.textContent = 'Submitting
+      const statusDiv = document.getElementById('submitStatus
