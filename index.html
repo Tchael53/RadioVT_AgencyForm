@@ -1,4 +1,121 @@
-<!DOCTYPE html>
+data: function (params) {
+            return {
+              query: `query {
+                boards(ids: ${MONDAY_BOARD_ID}) {
+                  items_page(query_params: {rules: [{column_id: "name", compare_value: ["${params.term}"], operator: contains_text}]}) {
+                    items {
+                      id
+                      name
+                      column_values(ids: ["text__1", "account_contact"]) {
+                        id
+                        ... on TextValue {
+                          text
+                        }
+                        ... on PeopleValue {
+                          persons_and_teams {
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }`
+            };
+          },
+          processResults: function (data) {
+            const items = data.data.boards[0].items_page.items;
+            return {
+              results: items.map(item => {
+                // Extract address from text__1 column
+                const addressVal = item.column_values.find(col => col.id === 'text__1')?.text || '';
+                
+                // Extract contact from account_contact column
+                let contactVal = '';
+                const contactCol = item.column_values.find(col => col.id === 'account_contact');
+                if (contactCol && contactCol.persons_and_teams) {
+                  contactVal = contactCol.persons_and_teams.map(person => 
+                    person.name
+                  ).join(', ');
+                }
+
+                return {
+                  id: item.id,
+                  text: item.name,
+                  address: addressVal,
+                  contact: contactVal
+                };
+              })
+            };
+          },
+          cache: true
+        },
+        minimumInputLength: 2
+      }).on('select2:select', function (e) {
+        const selectedItem = $(e.params.data);
+        $('#contact').val(selectedItem[0].contact);
+        $('#address').val(selectedItem[0].address);
+        $('#telephone').val(''); // Clear telephone as it's not in this example
+      });          data: function (params) {
+            return {
+              query: `query {
+                boards(ids: ${MONDAY_BOARD_ID}) {
+                  items_page(query_params: {rules: [{column_id: "name", compare_value: ["${params.term}"], operator: contains_text}]}) {
+                    items {
+                      id
+                      name
+                      column_values(ids: ["text__1", "account_contact"]) {
+                        id
+                        ... on TextValue {
+                          text
+                        }
+                        ... on PeopleValue {
+                          persons_and_teams {
+                            id
+                            kind
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }`
+            };
+          },
+          processResults: function (data) {
+            const items = data.data.boards[0].items_page.items;
+            return {
+              results: items.map(item => {
+                // Extract address from text__1 column
+                const addressVal = item.column_values.find(col => col.id === 'text__1')?.text || '';
+                
+                // Extract contact from account_contact column
+                let contactVal = '';
+                const contactCol = item.column_values.find(col => col.id === 'account_contact');
+                if (contactCol && contactCol.persons_and_teams) {
+                  contactVal = contactCol.persons_and_teams.map(person => 
+                    person.kind === 'person' ? person.id : ''
+                  ).join(', ');
+                }
+
+                return {
+                  id: item.id,
+                  text: item.name,
+                  address: addressVal,
+                  contact: contactVal
+                };
+              })
+            };
+          },
+          cache: true
+        },
+        minimumInputLength: 2
+      }).on('select2:select', function (e) {
+        const selectedItem = $(e.params.data);
+        $('#contact').val(selectedItem[0].contact);
+        $('#address').val(selectedItem[0].address);
+        $('#telephone').val(''); // Clear telephone as it's not in this example
+      });<!DOCTYPE html>
 <html>
 <head>
   <title>Agency Order Form</title>
@@ -179,11 +296,6 @@
       <strong>Gross:</strong> <span id="gross" class="readonly-field">$0.00</span><br>
       <strong>Net:</strong> <span id="net" class="readonly-field">$0.00</span>
     </p>
-
-    <div class="form-actions">
-      <input type="submit" value="Submit" class="submit-button">
-      <div id="submitStatus" style="display: none;"></div>
-    </div>
   </form>
 
   <!-- Scripts -->
@@ -192,171 +304,170 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
   
   <script>
-    // Monday.com API configuration
-    const MONDAY_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQyNzI0MzYwNiwiYWFpIjoxMSwidWlkIjo2NjEwNzEzOSwiaWFkIjoiMjAyNC0xMC0yM1QxNDoxMjo0Ny4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjEzNjMwNDksInJnbiI6InVzZTEifQ._4O4wAXUwTgo4z2MsGc0F75bFLLiEHiDXjDUwiByycM';
-    const MONDAY_API_URL = 'https://api.monday.com/v2';
-    const BOARD_ID = '6085343068';
+    // Agency data (simulated from Monday.com)
+    // Configuration to be replaced with your actual API key
+    const MONDAY_API_KEY = 'YOUR_MONDAY_API_KEY';
+    const MONDAY_BOARD_ID = '6085343068';
 
-    // Initialize Select2 for agency dropdown
-    $('.agency-select').select2({
-      placeholder: 'Search for an agency...',
-      minimumInputLength: 2,
-      ajax: {
-        url: MONDAY_API_URL,
-        headers: {
-          'Authorization': MONDAY_API_KEY,
-          'Content-Type': 'application/json'
-        },
-        data: function(params) {
-          const query = `
-            query {
-              boards(ids: ${BOARD_ID}) {
-                items_page(search_term: "${params.term}", limit: 10) {
-                  items {
-                    id
-                    name
-                    column_values {
-                      title
-                      text
+    $(document).ready(function() {
+      // Initialize agency select with Monday.com API search
+      $('.agency-select').select2({
+        placeholder: 'Search for an agency...',
+        minimumInputLength: 2,
+        ajax: {
+          url: 'https://api.monday.com/v2',
+          type: 'POST',
+          headers: {
+            'Authorization': MONDAY_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return {
+              query: `query {
+                boards(ids: ${MONDAY_BOARD_ID}) {
+                  items_page(query_params: {rules: [{column_id: "name", compare_value: ["${params.term}"], operator: contains_text}]}) {
+                    items {
+                      id
+                      name
+                      column_values(ids: ["contact", "address", "phone"]) {
+                        id
+                        text
+                      }
                     }
                   }
                 }
-              }
-            }
-          `;
-          
-          return {
-            query: query
-          };
+              }`
+            };
+          },
+          processResults: function (data) {
+            const items = data.data.boards[0].items_page.items;
+            return {
+              results: items.map(item => {
+                // Extract column values
+                const contactVal = item.column_values.find(col => col.id === 'contact')?.text || '';
+                const addressVal = item.column_values.find(col => col.id === 'address')?.text || '';
+                const phoneVal = item.column_values.find(col => col.id === 'phone')?.text || '';
+
+                return {
+                  id: item.id,
+                  text: item.name,
+                  contact: contactVal,
+                  address: addressVal,
+                  phone: phoneVal
+                };
+              })
+            };
+          },
+          cache: true
         },
-        processResults: function(data) {
-          return {
-            results: data.data.boards[0].items_page.items.map(item => ({
-              id: item.id,
-              text: item.name,
-              address: item.column_values.find(col => col.title === 'Address')?.text || '',
-              contact: item.column_values.find(col => col.title === 'Contact')?.text || '',
-              telephone: item.column_values.find(col => col.title === 'Phone')?.text || ''
-            }))
-          };
+        minimumInputLength: 2
+      }).on('select2:select', function (e) {
+        const selectedItem = $(e.params.data);
+        $('#contact').val(selectedItem[0].contact);
+        $('#address').val(selectedItem[0].address);
+        $('#telephone').val(selectedItem[0].phone);
+      });
+
+      // Initialize date range pickers
+      function initializeDatepicker(element) {
+        flatpickr(element, {
+          mode: "range",
+          dateFormat: "m/d/y",
+          allowInput: true,
+          onChange: calculateTotalPrice
+        });
+      }
+
+      // Initialize existing datepickers
+      document.querySelectorAll('.datepicker').forEach(initializeDatepicker);
+
+      function calculateWeeklyPrice(row) {
+        const dateRangeInput = row.querySelector('.datepicker');
+        const dateRange = dateRangeInput ? dateRangeInput.value : '';
+        const [startDate, endDate] = dateRange.split(' to ');
+        
+        const rateInput = row.querySelector('input[name="rate[]"]');
+        const rate = rateInput ? parseFloat(rateInput.value) || 0 : 0;
+        
+        // Get all day values
+        const days = ['m', 'tu', 'w', 'th', 'f', 'sat', 'sun'];
+        let totalSpots = 0;
+        
+        days.forEach(day => {
+          const dayInput = row.querySelector(`input[name="${day}[]"]`);
+          const dayValue = dayInput ? parseFloat(dayInput.value) || 0 : 0;
+          totalSpots += dayValue;
+        });
+        
+        // Calculate weeks in the date range
+        let weeks = 0;
+        if (startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+          weeks = Math.ceil(daysDiff / 7);
+        }
+        
+        // Calculate total price for this row
+        const weeklyPrice = totalSpots * rate;
+        const totalPrice = weeklyPrice * weeks;
+        
+        const weekField = row.querySelector('.readonly-field');
+        if (weekField) {
+          weekField.textContent = '$' + totalPrice.toFixed(2);
+        }
+        
+        return totalPrice;
+      }
+
+      function calculateTotalPrice() {
+        const rows = document.querySelectorAll('#daypartsTable tr:not(:first-child)');
+        let totalGross = 0;
+        let totalNet = 0;
+
+        rows.forEach(row => {
+          const weeklyPrice = calculateWeeklyPrice(row);
+          totalGross += weeklyPrice;
+          totalNet += weeklyPrice;
+        });
+
+        const grossField = document.getElementById('gross');
+        const netField = document.getElementById('net');
+        if (grossField && netField) {
+          grossField.textContent = '$' + totalGross.toFixed(2);
+          netField.textContent = '$' + totalNet.toFixed(2);
         }
       }
-    }).on('select2:select', function(e) {
-      const data = e.params.data;
-      document.getElementById('address').value = data.address;
-      document.getElementById('contact').value = data.contact;
-      document.getElementById('telephone').value = data.telephone;
-    });
 
-    // Initialize date range pickers
-    function initializeDatepicker(element) {
-      flatpickr(element, {
-        mode: "range",
-        dateFormat: "m/d/y",
-        allowInput: true,
-        onChange: calculateTotalPrice
-      });
-    }
-
-    // Initialize existing datepickers
-    document.querySelectorAll('.datepicker').forEach(initializeDatepicker);
-
-    function calculateWeeklyPrice(row) {
-      const dateRangeInput = row.querySelector('.datepicker');
-      const dateRange = dateRangeInput ? dateRangeInput.value : '';
-      const [startDate, endDate] = dateRange.split(' to ');
-      
-      const rateInput = row.querySelector('input[name="rate[]"]');
-      const rate = rateInput ? parseFloat(rateInput.value) || 0 : 0;
-      
-      // Get all day values
-      const days = ['m', 'tu', 'w', 'th', 'f', 'sat', 'sun'];
-      let totalSpots = 0;
-      
-      days.forEach(day => {
-        const dayInput = row.querySelector(`input[name="${day}[]"]`);
-        const dayValue = dayInput ? parseFloat(dayInput.value) || 0 : 0;
-        totalSpots += dayValue;
-      });
-      
-      // Calculate weeks in the date range
-      let weeks = 0;
-      if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-        weeks = Math.ceil(daysDiff / 7);
+      // Function to create and add new row
+      function addNewRow() {
+        const table = document.getElementById('daypartsTable');
+        const newRow = table.insertRow(-1);
+        
+        const template = `
+          <td><input type="text" name="dates[]" class="datepicker"></td>
+          <td><input type="text" name="startTime[]"></td>
+          <td><input type="text" name="endTime[]"></td>
+          <td><input type="number" name="m[]" min="0"></td>
+          <td><input type="number" name="tu[]" min="0"></td>
+          <td><input type="number" name="w[]" min="0"></td>
+          <td><input type="number" name="th[]" min="0"></td>
+          <td><input type="number" name="f[]" min="0"></td>
+          <td><input type="number" name="sat[]" min="0"></td>
+          <td><input type="number" name="sun[]" min="0"></td>
+          <td><input type="number" name="rate[]" min="0" step="0.01"></td>
+          <td><span class="readonly-field">$0.00</span></td>
+        `;
+        
+        newRow.innerHTML = template;
+        
+        // Initialize datepicker for new row
+        initializeDatepicker(newRow.querySelector('.datepicker'));
       }
-      
-      // Calculate total price for this row
-      const weeklyPrice = totalSpots * rate;
-      const totalPrice = weeklyPrice * weeks;
-      
-      const weekField = row.querySelector('.readonly-field');
-      if (weekField) {
-        weekField.textContent = '$' + totalPrice.toFixed(2);
-      }
-      
-      return totalPrice;
-    }
 
-    function calculateTotalPrice() {
-      const rows = document.querySelectorAll('#daypartsTable tr:not(:first-child)');
-      let totalGross = 0;
-      let totalNet = 0;
-
-      rows.forEach(row => {
-        const weeklyPrice = calculateWeeklyPrice(row);
-        totalGross += weeklyPrice;
-        totalNet += weeklyPrice;
-      });
-
-      const grossField = document.getElementById('gross');
-      const netField = document.getElementById('net');
-      if (grossField && netField) {
-        grossField.textContent = '$' + totalGross.toFixed(2);
-        netField.textContent = '$' + totalNet.toFixed(2);
-      }
-    }
-
-    // Function to create and add new row
-    function addNewRow() {
-      const table = document.getElementById('daypartsTable');
-      const newRow = table.insertRow(-1);
-      
-      const template = `
-        <td><input type="text" name="dates[]" class="datepicker"></td>
-        <td><input type="text" name="startTime[]"></td>
-        <td><input type="text" name="endTime[]"></td>
-        <td><input type="number" name="m[]" min="0"></td>
-        <td><input type="number" name="tu[]" min="0"></td>
-        <td><input type="number" name="w[]" min="0"></td>
-        <td><input type="number" name="th[]" min="0"></td>
-        <td><input type="number" name="f[]" min="0"></td>
-        <td><input type="number" name="sat[]" min="0"></td>
-        <td><input type="number" name="sun[]" min="0"></td>
-        <td><input type="number" name="rate[]" min="0" step="0.01"></td>
-        <td><span class="readonly-field">$0.00</span></td>
-      `;
-      
-      newRow.innerHTML = template;
-      
-      // Initialize datepicker for new row
-      initializeDatepicker(newRow.querySelector('.datepicker'));
-    }
-
-    // Add event listeners
-    const tableBody = document.querySelector('#daypartsTable');
-    tableBody.addEventListener('input', function(event) {
-      if (event.target.matches('input[name="rate[]"], input[name^="m"], input[name^="tu"], input[name^="w"], input[name^="th"], input[name^="f"], input[name^="sat"], input[name^="sun"]')) {
-        calculateTotalPrice();
-      }
-    });
-
-    // Add Row button event listener
-    document.getElementById('addRow').addEventListener('click', addNewRow);
-
-    // Form submission handling will be added here
-  </script>
-</body>
-</html>
+      // Add event listeners
+      const tableBody = document.querySelector('#daypartsTable');
+      tableBody.addEventListener('input', function(event) {
+        if (event.target.matches('input[name="rate[]"], input[name^="m"], input
