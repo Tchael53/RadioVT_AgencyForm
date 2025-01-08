@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html>
 <head>
-  <script src="config.js"></script>
   <title>Agency Order Form</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
@@ -188,69 +188,58 @@
   
   <script>
     // Agency data (simulated from Monday.com)
-    // Configuration to be replaced with your actual API key
-    const MONDAY_API_KEY = 'YOUR_MONDAY_API_KEY';
-    const MONDAY_BOARD_ID = '6085343068';
+    const agencies = [
+      { id: "1", name: "Vermont Taxi" },
+      { id: "2", name: "Addison County Field Days" },
+      { id: "3", name: "Always On Time Signs & Design" },
+      { id: "4", name: "Associates in Periodontics" },
+      { id: "5", name: "Barre Opera House" },
+      { id: "6", name: "Bittner Antiques" },
+      { id: "7", name: "Burlington Laser Pain Center" },
+      { id: "8", name: "CMP Entertainment" },
+      { id: "9", name: "Craftsbury Chamber Players" },
+      { id: "10", name: "Creative Sound" },
+      { id: "11", name: "Double E - Essex Experience" },
+      { id: "12", name: "Emporium Presents" },
+      { id: "13", name: "Flynn Center" },
+      { id: "14", name: "Galaxy Entertainment" },
+      { id: "15", name: "Gardeners Supply - Retail" },
+      { id: "16", name: "Heartless Tribute" },
+      { id: "17", name: "Higher Ground Productions" },
+      { id: "18", name: "Highland Center for the Arts" },
+      { id: "19", name: "Klinger's Bread Company" },
+      { id: "20", name: "Lyric Theatre" },
+      { id: "21", name: "Mad River Craft Fair" },
+      { id: "22", name: "Morrison Woodworking" },
+      { id: "23", name: "National Street Rods Association (The PKA Agency)" },
+      { id: "24", name: "Otter Creek Awnings" },
+      { id: "25", name: "Palladium Entertainment Group" },
+      { id: "7479115497", name: "Radio VT - LMS" }
+    ];
 
     $(document).ready(function() {
-      // Initialize agency select with Monday.com API search
+      // Initialize agency select
       $('.agency-select').select2({
         placeholder: 'Search for an agency...',
         minimumInputLength: 2,
-        ajax: {
-          url: 'https://api.monday.com/v2',
-          type: 'POST',
-          headers: {
-            'Authorization': MONDAY_API_KEY,
-            'Content-Type': 'application/json'
-          },
-          dataType: 'json',
-          delay: 250,
-          data: function (params) {
-            return {
-              query: `query {
-                boards(ids: ${MONDAY_BOARD_ID}) {
-                  items_page(query_params: {rules: [{column_id: "name", compare_value: ["${params.term}"], operator: contains_text}]}) {
-                    items {
-                      id
-                      name
-                      column_values(ids: ["contact", "address", "phone"]) {
-                        id
-                        text
-                      }
-                    }
-                  }
-                }
-              }`
-            };
-          },
-          processResults: function (data) {
-            const items = data.data.boards[0].items_page.items;
-            return {
-              results: items.map(item => {
-                // Extract column values
-                const contactVal = item.column_values.find(col => col.id === 'contact')?.text || '';
-                const addressVal = item.column_values.find(col => col.id === 'address')?.text || '';
-                const phoneVal = item.column_values.find(col => col.id === 'phone')?.text || '';
-
-                return {
-                  id: item.id,
-                  text: item.name,
-                  contact: contactVal,
-                  address: addressVal,
-                  phone: phoneVal
-                };
-              })
-            };
-          },
-          cache: true
-        },
-        minimumInputLength: 2
-      }).on('select2:select', function (e) {
-        const selectedItem = $(e.params.data);
-        $('#contact').val(selectedItem[0].contact);
-        $('#address').val(selectedItem[0].address);
-        $('#telephone').val(selectedItem[0].phone);
+        data: agencies.map(agency => ({
+          id: agency.id,
+          text: agency.name
+        })),
+        matcher: function(params, data) {
+          if ($.trim(params.term) === '') {
+            return data;
+          }
+          if (typeof data.text === 'undefined') {
+            return null;
+          }
+          const term = params.term.toLowerCase();
+          const text = data.text.toLowerCase();
+          if (text.indexOf(term) > -1) {
+            return data;
+          }
+          return null;
+        }
       });
 
       // Initialize date range pickers
@@ -353,4 +342,14 @@
       // Add event listeners
       const tableBody = document.querySelector('#daypartsTable');
       tableBody.addEventListener('input', function(event) {
-        if (event.target.matches('input[name="rate[]"], input[name^="m"], input
+        if (event.target.matches('input[name="rate[]"], input[name^="m"], input[name^="tu"], input[name^="w"], input[name^="th"], input[name^="f"], input[name^="sat"], input[name^="sun"]')) {
+          calculateTotalPrice();
+        }
+      });
+
+      // Add Row button event listener
+      document.getElementById('addRow').addEventListener('click', addNewRow);
+    });
+  </script>
+</body>
+</html>
